@@ -24,7 +24,7 @@ namespace vindinium
             ServerStuff serverStuff = new ServerStuff("o5g172ov", true, 500, serverURL, null);
 
             //create the random bot, replace this with your own bot
-            RandomBot bot = new RandomBot(serverStuff);
+            GreatestBot bot = new GreatestBot(serverStuff);
 
             //now kick it all off by running the bot.
             bot.run();
