@@ -6,25 +6,24 @@ using System.Text;
 namespace vindinium
 {
 
-    class SearchNode
+    class Node
     {
-        public SearchNode Parent;
-        public bool InOpenList;
-        public bool InClosedList;
-        public float DistanceToGoal;
-        public float DistanceTraveled;
-
+        public Node Parent;
+        public int F;
+        public int G;
+        public int H;
+        public String direction;
         public Pos Position;
         public bool Walkable;
-        public SearchNode[] Neighbors;
     }
+
+    //Neighbors
 
     class AStar
     {
-        private SearchNode[,] searchNodes;
-        private List<SearchNode> openList = new List<SearchNode>();
-        private List<SearchNode> closedList = new List<SearchNode>();
-
+        public List<Node> openList = new List<Node>();
+        public List<Node> closedList = new List<Node>();
+        public List<Node> neighbors = new List<Node>();
         private int width;
         private int height;
         private Tile[][] map;
@@ -38,281 +37,221 @@ namespace vindinium
             serverStuff = aServerStuff;
         }
 
-        public List<Pos> FindPath(Pos startPoint, Pos endPoint)
+        public List<String> FindPath(Pos startPoint, Pos endPoint)
         {
+            openList.Clear();
+            closedList.Clear();
+            List<String> path = new List<String>();
+            List<Pos> pathPos = new List<Pos>();
+
+
+
             // initialiser 
-            InitializeSearchNodes(map, startPoint, endPoint);
+            //InitializeSearchNodes(map, startPoint, endPoint);
 
-            if (startPoint == endPoint)
+            //show the walkable maps
+            for (int i = 0; i < width; i++)
             {
-                return new List<Pos>();
+                for (int j = 0; j < height; j++)
+                {
+                    if (map[j][i] == Tile.FREE)
+                    {
+                        Console.Out.Write(" ");
+                    }
+                    else
+                    {
+                        Console.Out.Write("#");
+                    }
+
+                }
+                Console.Out.WriteLine("");
             }
-            ///////////////////////////////////////////////////////////////////
-            // Step 1: Clear the open and closed lists and reset all of the  //
-            // nodes F and G values incase they're still set from last time. //
-            ///////////////////////////////////////////////////////////////////
-            ResetSearchNodes();
+            Console.Out.WriteLine("");
+            Console.Out.WriteLine("");
 
-            // Store references to start and end nodes for convience.
-            SearchNode startNode = searchNodes[startPoint.x, startPoint.y];
-            SearchNode endNode = searchNodes[endPoint.x, endPoint.y];
+            //get neighbors points
+            int t = 0;
 
-            ///////////////////////////////////////////////////////////////////
-            // Step 2: Set the start node's G value to 0 and its F value to  //
-            //         the estimated distance between the start node and goal//
-            //         node.  (This is where the heuristic comes in) and add //
-            //         it to the open list                                   //
-            ///////////////////////////////////////////////////////////////////
-            startNode.InOpenList = true;
-            startNode.DistanceToGoal = Heuristic(startPoint, endPoint);
-            startNode.DistanceTraveled = 0;
-            openList.Add(startNode);
-
-            ///////////////////////////////////////////////////////////////////
-            // Step 3: While there are still nodes on the open list...       //
-            ///////////////////////////////////////////////////////////////////
-            while (openList.Count > 0)
+            while (t < 5)
             {
-                // Find the node with the lowest F value
-                SearchNode currentNode = FindBestNode();
+                if (t == 0)
+                {
+                    getNeighbors(startPoint, endPoint);
+                }
+                else
+                {
+                    getNeighbors(pathPos[t-1], endPoint);
+                }
 
-                // If the open list is empty or no node can be found
-                if (currentNode == null)
+                Pos tempPos = new Pos();
+                String tempString = "";
+                Node tnode = new Node();
+                int temp = 2000;
+                for (int i = 0; i < neighbors.Count(); i++)
+                {
+                    if (neighbors[i].F <= temp)
+                    {
+                        if (neighbors[i].F == 1)
+                        {
+                            tempString = "Stay";
+                        }
+                        else
+                        {
+                            tempString = neighbors[i].direction;
+                        }
+                        tempPos = neighbors[i].Position;
+                        tnode = neighbors[i];
+                        temp = neighbors[i].F;
+                    }
+                }
+
+                Console.Out.WriteLine("tempPos: x=" + tempPos.x + ", y=" + tempPos.y);
+                Console.Out.WriteLine("tempString: " + tempString);
+                openList.Add(tnode);
+                pathPos.Add(tempPos);
+                path.Add(tempString);
+                closedList.Add(tnode);
+                t++;
+
+                startPoint = pathPos[t-1];
+
+                if (tempString == "Stay")
                 {
                     break;
                 }
 
-                // If we've reached our goal
-                if (currentNode == endNode)
-                {
-                    return FindFinalPath(startNode, endNode);
-                }
-
-                // If not, keep going through the open list
-                for (int i = 0; i < currentNode.Neighbors.Length; i++)
-                {
-                    SearchNode neighbor = currentNode.Neighbors[i];
-                    if (neighbor == null || neighbor.Walkable == false)
-                    {
-                        continue;
-                    }
-
-                    float distanceTraveled = currentNode.DistanceTraveled + 1;
-                    float heuristic = Heuristic(neighbor.Position, endPoint);
-
-                    // If the neighbor isn't in the closed or open list
-                    if (neighbor.InOpenList == false && neighbor.InClosedList == false)
-                    {
-                        neighbor.DistanceTraveled = distanceTraveled;
-                        neighbor.DistanceToGoal = distanceTraveled + heuristic;
-                        neighbor.Parent = currentNode;
-                        neighbor.InOpenList = true;
-                        openList.Add(neighbor);
-                    }
-                    else if (neighbor.InOpenList || neighbor.InClosedList)
-                    {
-                        if (neighbor.DistanceTraveled > distanceTraveled)
-                        {
-                            neighbor.DistanceTraveled = distanceTraveled;
-                            neighbor.DistanceToGoal = distanceTraveled + heuristic;
-                            neighbor.Parent = currentNode;
-                        }
-                    }
-                }
-                openList.Remove(currentNode);
-                currentNode.InClosedList = true;
+//                 Console.Out.WriteLine("OpenList: " + openList.Count);
+// 
+//                 for (int i = 0; i < openList.Count(); i++)
+//                 {
+//                     Console.Out.WriteLine("OpenList: x=" + openList[i].Position.x + ", y=" + openList[i].Position.y);
+//                 }
+// 
+//                 Console.Out.WriteLine("CloseList: " + closedList.Count);
+// 
+//                 for (int i = 0; i < closedList.Count(); i++)
+//                 {
+//                     Console.Out.WriteLine("OpenList: x=" + closedList[i].Position.x + ", y=" + closedList[i].Position.y);
+//                 }
+// 
+//                 for (int i = 0; i < openList.Count(); i++)
+//                 {
+//                     Console.Out.WriteLine("OpenList: f=" + openList[i].F);
+//                 }
             }
 
-            return new List<Pos>();
+
+            
+            return path;
         }
 
-        private float Heuristic(Pos point1, Pos point2)
+        private void getNeighbors(Pos startPos, Pos endPos)
         {
-            return Math.Abs(point1.x - point2.x)
-                 + Math.Abs(point1.y - point2.y);
+            neighbors.Clear();
+            Pos nUP = new Pos();
+            Pos nDown = new Pos();
+            Pos nRight = new Pos();
+            Pos nLift = new Pos();
+
+            //up
+            nUP.x = startPos.x - 1;
+            nUP.y = startPos.y;
+
+            Node node1 = new Node();
+            if ((nUP.x < 0 || nUP.y < 0) || map[nUP.y][nUP.x] != Tile.FREE)
+            {
+                node1.Position = nUP;
+                node1.Walkable = false;
+                closedList.Add(node1);
+            }
+            else
+            {
+                node1.Position = nUP;
+                node1.Walkable = true;
+                //node1.Parent.Position = startPos;
+                node1.G = 10;
+                node1.H = getH(node1.Position, endPos);
+                node1.F = node1.G + node1.H;
+                node1.direction = "North";
+                neighbors.Add(node1);
+            }
+
+            //down
+            nDown.x = startPos.x + 1;
+            nDown.y = startPos.y;
+
+            Node node2 = new Node();
+            if ((nDown.x < 0 || nDown.y < 0) || map[nDown.y][nDown.x] != Tile.FREE)
+            {
+                node2.Position = nDown;
+                node2.Walkable = false;
+                closedList.Add(node2);
+            }
+            else
+            {
+                node2.Position = nDown;
+                node2.Walkable = true;
+                //node2.Parent.Position = startPos;
+                node2.G = 10;
+                node2.H = getH(node2.Position, endPos);
+                node2.F = node2.G + node2.H;
+                node2.direction = "South";
+                neighbors.Add(node2);
+            }
+
+            //down
+            nRight.x = startPos.x;
+            nRight.y = startPos.y + 1;
+
+            Node node3 = new Node();
+            if ((nRight.x < 0 || nRight.y < 0) || map[nRight.y][nRight.x] != Tile.FREE)
+            {
+                node3.Position = nRight;
+                node3.Walkable = false;
+                closedList.Add(node3);
+            }
+            else
+            {
+                node3.Position = nRight;
+                node3.Walkable = true;
+                //node3.Parent.Position = startPos;
+                node3.G = 10;
+                node3.H = getH(node3.Position, endPos);
+                node3.F = node3.G + node3.H;
+                node3.direction = "East";
+                neighbors.Add(node3);
+            }
+
+            //down
+            nLift.x = startPos.x;
+            nLift.y = startPos.y - 1;
+
+            Node node4 = new Node();
+            if ((nLift.x < 0 || nLift.y < 0) || map[nLift.y][nLift.x] != Tile.FREE)
+            {
+                node4.Position = nLift;
+                node4.Walkable = false;
+                closedList.Add(node4);
+            }
+            else
+            {
+                node4.Position = nLift;
+                node4.Walkable = true;
+                //node4.Parent.Position = startPos;
+                node4.G = 10;
+                node4.H = getH(node4.Position, endPos);
+                node4.F = node4.G + node4.H;
+                node4.direction = "West";
+                neighbors.Add(node4);
+            }
         }
 
-        private void ResetSearchNodes()
+        private int getH(Pos point1, Pos point2)
         {
-            openList.Clear();
-            closedList.Clear();
-
-            for (int x = 0; x < width; x++)
-            {
-                for (int y = 0; y < height; y++)
-                {
-                    SearchNode node = searchNodes[x, y];
-                    if (node == null)
-                    {
-                        continue;
-                    }
-                    node.InOpenList = false;
-                    node.InClosedList = false;
-                    node.DistanceTraveled = float.MaxValue;
-                    node.DistanceToGoal = float.MaxValue;
-                }
-            }
+            return Math.Abs(point1.x - point2.x) + Math.Abs(point1.y - point2.y);
         }
 
-        private List<Pos> FindFinalPath(SearchNode startNode, SearchNode endNode)
-        {
-            closedList.Add(endNode);
-            SearchNode parentTile = endNode.Parent;
-            while (parentTile != startNode)
-            {
-                closedList.Add(parentTile);
-                parentTile = parentTile.Parent;
-            }
 
-            List<Pos> finalPath = new List<Pos>();
 
-            for (int i = closedList.Count - 1; i >= 0; i--)
-            {
-                finalPath.Add(closedList[i].Position);
-            }
-            return finalPath;
-        }
-
-        private SearchNode FindBestNode()
-        {
-            SearchNode currentTile = openList[0];
-            float smallestDistanceToGoal = float.MaxValue;
-            for (int i = 0; i < openList.Count; i++)
-            {
-                if (openList[i].DistanceToGoal < smallestDistanceToGoal)
-                {
-                    currentTile = openList[i];
-                    smallestDistanceToGoal = currentTile.DistanceToGoal;
-                }
-            }
-            return currentTile;
-        }
-
-        /// <summary>
-        /// 4 directions of other heros are not walkable to keep safe
-        /// </summary>
-        /// <param name="endPoint"></param>
-        /// <param name="searchNodes"></param>
-        private void NotWalkableHero(Pos endPoint, SearchNode[,] searchNodes)
-        {
-            // other heros' positions
-            List<Pos> HeroPos = new List<Pos>();
-            for (int i = 0; i < 4; i++)
-            {
-                if (i + 1 != serverStuff.myHero.id && serverStuff.heroes[i].crashed == false)
-                {
-                    HeroPos.Add(serverStuff.heroes[i].pos);
-                }
-            }
-            foreach (Pos pos in HeroPos)
-            {
-                // the others are not the target
-                if (endPoint.x != pos.x && endPoint.y != pos.y)
-                {
-                    if (pos.y + 1 < height)
-                    {
-                        // east
-                        searchNodes[pos.x, pos.y + 1] = null;
-                    }
-                    if (pos.y - 1 >= 0)
-                    {
-                        //west
-                        searchNodes[pos.x, pos.y - 1] = null;
-                    }
-                    if (pos.x + 1 < width)
-                    {
-                        // south
-                        searchNodes[pos.x + 1, pos.y] = null;
-                    }
-                    if (pos.x - 1 >= 0)
-                    {
-                        //north
-                        searchNodes[pos.x - 1, pos.y] = null;
-                    }
-                }
-            }
-        }
-        private void InitializeSearchNodes(Tile[][] map, Pos startPoint, Pos endPoint)
-        {
-            searchNodes = new SearchNode[width, height];
-            for (int x = 0; x < width; x++)
-            {
-                for (int y = 0; y < height; y++)
-                {
-                    SearchNode node = new SearchNode();
-                    Pos temp = new Pos();
-                    temp.x = x;
-                    temp.y = y;
-                    node.Position = temp;
-                    node.Walkable = map[x][y] == Tile.FREE;
-                    if (node.Walkable)
-                    {
-                        node.Neighbors = new SearchNode[4];
-                        searchNodes[x, y] = node;
-                    }
-                }
-            }
-
-            //-----------------------------------------------------------------------
-            // Option: ajouter la fonction set 4 directions des heros notwalkable
-            NotWalkableHero(endPoint, searchNodes);
-            //-----------------------------------------------------------------------
-
-            // ajouter endPoint
-            SearchNode endNode = new SearchNode();
-            endNode.Position = endPoint;
-            endNode.Walkable = true;
-            endNode.Neighbors = new SearchNode[4];
-            searchNodes[endPoint.x, endPoint.y] = endNode;
-            // ajouter startPoint
-            SearchNode startNode = new SearchNode();
-            startNode.Position = startPoint;
-            startNode.Walkable = true;
-            startNode.Neighbors = new SearchNode[4];
-            searchNodes[startPoint.x, startPoint.y] = startNode;
-
-            // ajouter neighbors
-            for (int x = 0; x < width; x++)
-            {
-                for (int y = 0; y < height; y++)
-                {
-                    SearchNode node = searchNodes[x, y];
-                    if (node == null || node.Walkable == false)
-                    {
-                        continue;
-                    }
-
-                    Pos n1 = new Pos();
-                    Pos n2 = new Pos();
-                    Pos n3 = new Pos();
-                    Pos n4 = new Pos();
-                    n1.x = x; n1.y = y - 1;
-                    n2.x = x; n2.y = y + 1;
-                    n3.x = x - 1; n3.y = y;
-                    n4.x = x + 1; n4.y = y;
-
-                    Pos[] neighbors = new Pos[]
-                    {
-                        n1, n2, n3, n4
-                    };
-
-                    for (int i = 0; i < neighbors.Length; i++)
-                    {
-                        Pos position = neighbors[i];
-                        if (position.x < 0 || position.x > width - 1 ||
-                           position.y < 0 || position.y > height - 1)
-                        {
-                            continue;
-                        }
-                        SearchNode neighbor = searchNodes[position.x, position.y];
-                        if (neighbor == null || neighbor.Walkable == false)
-                        {
-                            continue;
-                        }
-                        node.Neighbors[i] = neighbor;
-                    }
-                }
-            }
-        }
     }
 }

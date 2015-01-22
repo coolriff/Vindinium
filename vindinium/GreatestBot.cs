@@ -9,7 +9,7 @@ namespace vindinium
 {
     class GreatestBot
     {
-        enum Mode {Attack, Mine, Heal};
+        enum Mode { Attack, Mine, Heal };
 
         private ServerStuff serverStuff;
         private AStar aStar;
@@ -25,7 +25,7 @@ namespace vindinium
         {
             this.serverStuff = serverStuff;
         }
-        
+
         //starts everything
         public void run()
         {
@@ -46,29 +46,50 @@ namespace vindinium
             }
 
             Random random = new Random();
+            // List<Pos> path = new List<Pos>();
+            List<List<Pos>> path = new List<List<Pos>>();
+
 
 
             while (serverStuff.finished == false && serverStuff.errored == false)
             {
                 aStar = new AStar(serverStuff.board, serverStuff);
-                sortByMineCount();
+                Console.Out.WriteLine("Hero x=" + serverStuff.myHero.pos.x + ", y=" + serverStuff.myHero.pos.y);
                 mines = sortList(getMineLocations());
                 enemies = sortList(getEnemyLocations());
-                mines = sortList(getBeerLocations());
+                taverns = sortList(getBeerLocations());
+
+                sortByMineCount();
+                sortByLife();
+
+                List<String> temps = new List<String>();
 
                 switch (mode)
                 {
                     case Mode.Attack:
-                       // path = AStar(serverStuff.myHero.pos, getNearestEnemy());
-                        aStar.FindPath(serverStuff.myHero.pos, getNearestEnemy());
-  
+
+                        //path.Add(aStar.FindPath(serverStuff.myHero.pos, getNearestEnemy()));
+                        //Console.Out.WriteLine("Attack" + " " + path[0].Count + " " + getDirection(path) + " Pos:" + getNearestEnemy());
+                        temps = aStar.FindPath(serverStuff.myHero.pos, getNearestEnemy());
+                        serverStuff.moveHero(temps[0]);
+                        Console.Out.WriteLine("Attack");
                         break;
                     case Mode.Mine:
-                        serverStuff.moveHero(Direction.East); // temporarily using this, otherwise game won't run as we have no move ability. 
-                        //path = AStar(serverStuff.myHero.pos, getNearestMine());
+
+                        //path.Add(aStar.FindPath(serverStuff.myHero.pos, getNearestMine()));
+                       // Console.Out.WriteLine("Mine" + " " + path[0].Count + " " + getDirection(path) + " Pos:" + getNearestMine());
+                        Pos fuckh = getNearestMine();
+                        temps = aStar.FindPath(serverStuff.myHero.pos, fuckh);
+                        serverStuff.moveHero(temps[0]);
+                        Console.Out.WriteLine("Mine");
                         break;
                     case Mode.Heal:
-                        //path = AStar(serverStuff.myHero.pos, getNearestTavern());
+
+                        //path.Add(aStar.FindPath(serverStuff.myHero.pos, getNearestTavern()));
+                        //Console.Out.WriteLine("Heal" + " " + path[0].Count + " " + getDirection(path) + " Pos:" + getNearestTavern());
+                        temps = aStar.FindPath(serverStuff.myHero.pos, getNearestTavern());
+                        serverStuff.moveHero(temps[0]);
+                        Console.Out.WriteLine("Heal");
                         break;
                 }
 
@@ -93,9 +114,9 @@ namespace vindinium
                     * 
                     * 
                 */
+                /*
 
-                
-                if(serverStuff.myHero.life < 21 || (serverStuff.myHero.life < 41 && (distanceTo(getNearestTavern()) < 7)))
+                if (serverStuff.myHero.life < 90 || (serverStuff.myHero.life < 41 && (distanceTo(getNearestTavern()) < 7)))
                 {
                     mode = Mode.Heal;
                 }
@@ -117,6 +138,7 @@ namespace vindinium
                 {
                     mode = Mode.Mine;
                 }
+                */
             }
 
             if (serverStuff.errored)
@@ -131,11 +153,11 @@ namespace vindinium
 
         public List<Pos> getBeerLocations()
         {
-           taverns.Clear();
+            taverns.Clear();
 
-           for(int xPos = 0; xPos < serverStuff.board.Length; xPos++)
-           {
-               for (int yPos = 0; yPos < serverStuff.board.Length; yPos++)
+            for (int xPos = 0; xPos < serverStuff.board.Length; xPos++)
+            {
+                for (int yPos = 0; yPos < serverStuff.board.Length; yPos++)
                 {
                     switch (serverStuff.board[xPos][yPos])
                     {
@@ -151,7 +173,7 @@ namespace vindinium
                 }
             }
 
-           return taverns;
+            return taverns;
         }
 
         private List<Pos> getEnemyLocations()
@@ -251,18 +273,18 @@ namespace vindinium
                             {
                                 Pos minePos = new Pos();
 
-                               minePos.x = xPos;
-                               minePos.y = yPos;
+                                minePos.x = xPos;
+                                minePos.y = yPos;
 
-                               mines.Add(minePos);
+                                mines.Add(minePos);
 
-                               break;
+                                break;
                             }
                             else
                             {
                                 break;
                             }
-                            case Tile.GOLD_MINE_2:
+                        case Tile.GOLD_MINE_2:
                             if (serverStuff.myHero.id != 2)
                             {
                                 Pos minePos = new Pos();
@@ -276,7 +298,7 @@ namespace vindinium
                             }
                             else
                             {
-                               break;
+                                break;
                             }
 
                         case Tile.GOLD_MINE_3:
@@ -312,22 +334,22 @@ namespace vindinium
                                 break;
                             }
                         case Tile.GOLD_MINE_NEUTRAL:
-                            
-                               Pos mineNPos = new Pos();
 
-                               mineNPos.x = xPos;
-                               mineNPos.y = yPos;
+                            Pos mineNPos = new Pos();
 
-                               mines.Add(mineNPos);
-                               break;
+                            mineNPos.x = xPos;
+                            mineNPos.y = yPos;
+
+                            mines.Add(mineNPos);
+                            break;
                     }
                 }
             }
 
             return mines;
         }
-        
-       
+
+
         public List<Pos> sortList(List<Pos> list)
         {
             Pos tempPos = new Pos();
@@ -338,7 +360,7 @@ namespace vindinium
                 {
                     double distanceToI = Math.Abs(list[i].x - serverStuff.myHero.pos.x) + Math.Abs(list[i].y - serverStuff.myHero.pos.y);
                     double distanceToJ = Math.Abs(list[j].x - serverStuff.myHero.pos.x) + Math.Abs(list[j].y - serverStuff.myHero.pos.y);
-                    
+
                     if (i != j && (distanceToI < distanceToJ))
                     {
                         tempPos.x = list[i].x;
@@ -356,7 +378,7 @@ namespace vindinium
             return list;
         }
 
-        
+
         public void sortByMineCount()
         {
             mineCounter.Clear();
@@ -382,27 +404,62 @@ namespace vindinium
             lifeCounter.Sort();
             lifeCounter.Reverse();
         }
-        
-        
+
+
         public double distanceTo(Pos point)
         {
             return Math.Abs(point.x - serverStuff.myHero.pos.x) + Math.Abs(point.y - serverStuff.myHero.pos.y);
         }
-        
+
 
         public Pos getNearestEnemy()
         {
+            //Console.Out.WriteLine("getNearestEnemy: x=" + enemies[0].x + ", y=" + enemies[0].y + ".");
             return enemies[0];
         }
 
         public Pos getNearestMine()
         {
+            //Console.Out.WriteLine("getNearestMine:i x=" + mines[0].x + ", y=" + mines[0].y + ".");
             return mines[0];
         }
 
         public Pos getNearestTavern()
         {
+            //Console.Out.WriteLine("getNearestTavern: x=" + taverns[0].x + ", y=" + taverns[0].y + ".");
             return taverns[0];
+        }
+
+        public String getDirection(List<List<Pos>> path)
+        {
+            if (path[0].Count == 0)
+            {
+                return "Stay";
+            }
+            else
+            {
+                //                 int deltaX = path[0].x - serverStuff.myHero.pos.x;
+                //                 int deltaY = path[0].y - serverStuff.myHero.pos.y;
+                int deltaX = path[0][0].x - serverStuff.myHero.pos.x;
+                int deltaY = path[0][0].y - serverStuff.myHero.pos.y;
+                if (deltaX == -1 && deltaY == 0)
+                {
+                    return "North";
+                }
+                else if (deltaX == 1 && deltaY == 0)
+                {
+                    return "South";
+                }
+                else if (deltaX == 0 && deltaY == -1)
+                {
+                    return "West";
+                }
+                else if (deltaX == 0 && deltaY == 1)
+                {
+                    return "East";
+                }
+            }
+            return "Stay";
         }
     }
 }
