@@ -19,7 +19,7 @@ namespace vindinium
         List<int> mineCounter = new List<int>(4);
         List<int> lifeCounter = new List<int>(4);
 
-        Mode mode = Mode.Mine;
+        Mode mode = Mode.Attack;
 
         public GreatestBot(ServerStuff serverStuff)
         {
@@ -32,7 +32,6 @@ namespace vindinium
             Console.Out.WriteLine("Greatest bot running");
 
             serverStuff.createGame();
-
 
 
             if (serverStuff.errored == false)
@@ -54,6 +53,7 @@ namespace vindinium
             while (serverStuff.finished == false && serverStuff.errored == false)
             {
                 aStar = new AStar(serverStuff.board, serverStuff);
+                Console.Out.WriteLine("======================================================");
                 Console.Out.WriteLine("Hero x=" + serverStuff.myHero.pos.x + ", y=" + serverStuff.myHero.pos.y);
                 mines = sortList(getMineLocations());
                 enemies = sortList(getEnemyLocations());
@@ -70,30 +70,26 @@ namespace vindinium
 
                         //path.Add(aStar.FindPath(serverStuff.myHero.pos, getNearestEnemy()));
                         //Console.Out.WriteLine("Attack" + " " + path[0].Count + " " + getDirection(path) + " Pos:" + getNearestEnemy());
-                        temps = aStar.FindPath(serverStuff.myHero.pos, getNearestEnemy());
-                        serverStuff.moveHero(temps[0]);
-                        Console.Out.WriteLine("Attack");
+                        serverStuff.moveHero(aStar.FindPath(serverStuff.myHero.pos, getNearestEnemy()));
+                        Console.Out.WriteLine("Attack x=" + enemies[0].x + ", y=" + enemies[0].y);
                         break;
                     case Mode.Mine:
 
                         //path.Add(aStar.FindPath(serverStuff.myHero.pos, getNearestMine()));
                        // Console.Out.WriteLine("Mine" + " " + path[0].Count + " " + getDirection(path) + " Pos:" + getNearestMine());
-                        Pos fuckh = getNearestMine();
-                        temps = aStar.FindPath(serverStuff.myHero.pos, fuckh);
-                        serverStuff.moveHero(temps[0]);
-                        Console.Out.WriteLine("Mine");
+                        serverStuff.moveHero(aStar.FindPath(serverStuff.myHero.pos, getNearestMine()));
+                        Console.Out.WriteLine("Mine x=" + mines[0].x + ", y=" + mines[0].y);
                         break;
                     case Mode.Heal:
 
                         //path.Add(aStar.FindPath(serverStuff.myHero.pos, getNearestTavern()));
                         //Console.Out.WriteLine("Heal" + " " + path[0].Count + " " + getDirection(path) + " Pos:" + getNearestTavern());
-                        temps = aStar.FindPath(serverStuff.myHero.pos, getNearestTavern());
-                        serverStuff.moveHero(temps[0]);
-                        Console.Out.WriteLine("Heal");
+                        serverStuff.moveHero(aStar.FindPath(serverStuff.myHero.pos, getNearestMine()));
+                        Console.Out.WriteLine("Heal x=" + taverns[0].x + ", y=" + taverns[0].y);
                         break;
                 }
 
-
+                Console.Out.WriteLine("======================================================");
                 /* Criteria for the modes: 
 
                     * Attack - Enemy has more than one mine
@@ -415,18 +411,27 @@ namespace vindinium
         public Pos getNearestEnemy()
         {
             //Console.Out.WriteLine("getNearestEnemy: x=" + enemies[0].x + ", y=" + enemies[0].y + ".");
+//             Pos t = new Pos();
+//             t.x = enemies[0].y;
+//             t.y = enemies[0].x;
             return enemies[0];
         }
 
         public Pos getNearestMine()
         {
             //Console.Out.WriteLine("getNearestMine:i x=" + mines[0].x + ", y=" + mines[0].y + ".");
+//             Pos t = new Pos();
+//             t.x = mines[0].y;
+//             t.y = mines[0].x;
             return mines[0];
         }
 
         public Pos getNearestTavern()
         {
             //Console.Out.WriteLine("getNearestTavern: x=" + taverns[0].x + ", y=" + taverns[0].y + ".");
+//             Pos t = new Pos();
+//             t.x = taverns[0].y;
+//             t.y = taverns[0].x;
             return taverns[0];
         }
 
